@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: stg_fedex_shipments
+    description: "Clean and standardized FedEx shipment data"
+    columns:
+      - name: origem
+        tests:
+          - not_null
+      - name: destino
+        tests:
+          - not_null
+      - name: distancia_milhas
+        tests:
+          - not_null
+      - name: status_entrega
+        tests:
+          - accepted_values:
+              values: [0, 1]
+              quote: false

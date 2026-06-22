@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: landing
+    description: "Data processed by EMR Serverless (Silver layer)"
+    database: dbt_landing
+    tables:
+      - name: fedex_silver
+        description: "Silver table with validated and enriched data from EMR"
+        external:
+          location: "s3://[YOUR_BUCKET]/output/fedex_silver/"
+          file_format: parquet

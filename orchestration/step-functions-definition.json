@@ -1,0 +1,60 @@
+{
+  "Comment": "Orchestrates pipeline: EMR Silver -> dbt Gold",
+  "StartAt": "RunEMRSilverJob",
+  "States": {
+    "RunEMRSilverJob": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::emr-serverless:startJobRun.sync",
+      "Parameters": {
+        "ApplicationId": "[EMR_APPLICATION_ID]",
+        "ExecutionRoleArn": "arn:aws:iam::[ACCOUNT_ID]:role/EMRServerlessJobRole",
+        "JobDriver": {
+          "SparkSubmit": {
+            "EntryPoint": "s3://[YOUR_BUCKET]/scripts/camada_silver.py",
+            "SparkSubmitParameters": "--conf spark.executor.cores=1 --conf spark.executor.memory=4g --conf spark.driver.cores=1 --conf spark.driver.memory=4g --conf spark.executor.instances=1 --conf spark.hadoop.hive.metastore.client.factory.class=com.amazonaws.glue.catalog.metastore.AWSGlueDataCatalogHiveClientFactory"
+          }
+        }
+      },
+      "ResultPath": "$.emrResult",
+      "Next": "RunDbtTask",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "PipelineFailed"
+        }
+      ]
+    },
+    "RunDbtTask": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::ecs:runTask.sync",
+      "Parameters": {
+        "Cluster": "arn:aws:ecs:us-east-1:[ACCOUNT_ID]:cluster/dbt-cluster",
+        "TaskDefinition": "dbt-lakehouse-task",
+        "LaunchType": "FARGATE",
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "Subnets": ["[SUBNET_ID]"],
+            "SecurityGroups": ["[SG_ID]"],
+            "AssignPublicIp": "ENABLED"
+          }
+        }
+      },
+      "ResultPath": "$.dbtResult",
+      "Next": "PipelineSucceeded",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "PipelineFailed"
+        }
+      ]
+    },
+    "PipelineSucceeded": {
+      "Type": "Succeed"
+    },
+    "PipelineFailed": {
+      "Type": "Fail",
+      "Error": "PipelineError",
+      "Cause": "A step failed. Check CloudWatch logs for details."
+    }
+  }
+}

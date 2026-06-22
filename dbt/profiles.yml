@@ -1,0 +1,13 @@
+medallion_lakehouse:
+  target: dev
+  outputs:
+    dev:
+      type: athena
+      s3_staging_dir: "s3://[YOUR_BUCKET]/athena-staging/"
+      s3_data_dir: "s3://[YOUR_BUCKET]/tables/"
+      region_name: us-east-1
+      database: awsdatacatalog
+      schema: dbt_landing
+      threads: 4
+      table_type: iceberg
+      work_group: primary

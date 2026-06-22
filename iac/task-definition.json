@@ -1,0 +1,26 @@
+{
+  "family": "dbt-lakehouse-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::[ACCOUNT_ID]:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::[ACCOUNT_ID]:role/ecsTaskDbtRole",
+  "containerDefinitions": [
+    {
+      "name": "dbt",
+      "image": "[ACCOUNT_ID].dkr.ecr.us-east-1.amazonaws.com/dbt-lakehouse:latest",
+      "essential": true,
+      "entryPoint": ["sh", "-c"],
+      "command": ["dbt seed && dbt run && dbt test"],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/dbt-validate",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "dbt"
+        }
+      }
+    }
+  ]
+}
